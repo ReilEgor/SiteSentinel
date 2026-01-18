@@ -23,22 +23,15 @@ func NewMonitorInteractor(repo domain.MonitorRepository, pub domain.TaskPublishe
 		logger:    slog.With(slog.String("component", "scheduler")),
 	}
 }
-func (i *MonitorInteractor) AddSite(ctx context.Context, userID uuid.UUID, url string) (*pkgModels.Site, error) {
-	return nil, nil
+func (i *MonitorInteractor) AddSite(ctx context.Context, userID uuid.UUID, url string, interval int) (*pkgModels.Site, error) {
+	return i.repo.AddSite(ctx, userID, url, interval)
 }
 
 func (i *MonitorInteractor) GetUserSites(ctx context.Context, userID uuid.UUID) ([]*pkgModels.Site, error) {
-	return nil, nil
+	return i.repo.GetUserSites(ctx, userID)
 }
 
 func (i *MonitorInteractor) ProcessCheckResult(ctx context.Context, result pkgModels.CheckResult) error {
-	slog.Info("Processing check result",
-		slog.String("site_id", result.SiteID.String()),
-		slog.Bool("is_up", result.IsUp),
-		slog.Int("status_code", result.StatusCode),
-		slog.Duration("latency", result.Latency),
-		slog.Time("checked_at", result.CheckedAt),
-	)
 	i.logger.Info("processing check result from worker")
 
 	if err := i.repo.SaveCheckResult(ctx, result); err != nil {

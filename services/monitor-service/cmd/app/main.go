@@ -48,6 +48,18 @@ func main() {
 		app.Consumer.Start(ctx)
 	}()
 
+	go func() {
+		port := os.Getenv("HTTP_PORT")
+		if port == "" {
+			port = "8080"
+		}
+
+		logger.Info("starting http server", slog.String("port", port))
+		if err := app.Server.Run(":" + port); err != nil {
+			logger.Error("http server failed", slog.Any("error", err))
+		}
+	}()
+
 	<-ctx.Done()
 	logger.Info("shutting down gracefully")
 }

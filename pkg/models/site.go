@@ -7,13 +7,14 @@ import (
 )
 
 type Site struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	URL       string    `json:"url"`
-	Interval  int       `json:"interval_seconds"`
-	Status    string    `json:"status"`
-	LastCheck time.Time `json:"last_check"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID  `json:"id"`
+	UserID    uuid.UUID  `json:"user_id"`
+	URL       string     `json:"url"`
+	Interval  int        `json:"interval_seconds"`
+	Status    string     `json:"status"`
+	LastCheck *time.Time `json:"last_check"`
+	CreatedAt time.Time  `json:"created_at"`
+	IsUp      bool       `json:"is_up"`
 }
 
 type CheckResult struct {
@@ -25,7 +26,7 @@ type CheckResult struct {
 	CheckedAt  time.Time     `json:"checked_at"`
 }
 
-func (s *Site) UpdateStatus(isUp bool, checkedAt time.Time) {
+func (s *Site) UpdateStatus(isUp bool, checkedAt *time.Time) {
 	if isUp {
 		s.Status = "up"
 	} else {

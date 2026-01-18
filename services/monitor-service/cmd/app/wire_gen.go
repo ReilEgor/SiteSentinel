@@ -9,6 +9,8 @@ package main
 import (
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/broker/rabbitmq"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/repository/postgres"
+	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/transport/rest"
+	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/transport/rest/handler"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/domain"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/scheduler"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/usecase"
@@ -38,10 +40,12 @@ func InitializeApp(dsn string, rabbitURL rabbitmq.RabbitURL, resultsQueue rabbit
 	monitorInteractor := usecase.NewMonitorInteractor(monitorRepository, publisher)
 	siteScheduler := scheduler.NewSiteScheduler(monitorRepository, publisher)
 	consumer := rabbitmq.NewConsumer(channel, resultsQueue, monitorInteractor)
+	ginServer := rest.NewGinServer(monitorInteractor)
 	app := &App{
 		Logic:     monitorInteractor,
 		Scheduler: siteScheduler,
 		Consumer:  consumer,
+		Server:    ginServer,
 	}
 	return app, func() {
 		cleanup3()
@@ -52,22 +56,19 @@ func InitializeApp(dsn string, rabbitURL rabbitmq.RabbitURL, resultsQueue rabbit
 
 // wire.go:
 
-// 1. Сет для планировщика (только конструктор)
 var SchedulerSet = wire.NewSet(scheduler.NewSiteScheduler)
 
-// 2. Сет для RabbitMQ
 var BrokerSet = wire.NewSet(rabbitmq.NewRabbitMQConn, rabbitmq.NewRabbitMQChannel, rabbitmq.NewPublisher, rabbitmq.NewConsumer, wire.Bind(new(domain.TaskPublisher), new(*rabbitmq.Publisher)))
 
-// 3. Сет для Базы данных
 var RepositorySet = wire.NewSet(postgres.NewPostgresDB, postgres.NewMonitorRepository, wire.Bind(new(domain.MonitorRepository), new(*postgres.MonitorRepository)))
 
-// 4. Сет для Бизнес-логики (Interactor)
 var UsecaseSet = wire.NewSet(usecase.NewMonitorInteractor, wire.Bind(new(domain.SiteUsecase), new(*usecase.MonitorInteractor)))
 
-// 5. Финальная сборка приложения
-// Используем структуру App, чтобы вернуть и сервис, и планировщик, и консьюмер
+var HTTPSet = wire.NewSet(rest.NewGinServer, handler.NewHandler)
+
 type App struct {
 	Logic     domain.SiteUsecase
 	Scheduler *scheduler.SiteScheduler
 	Consumer  *rabbitmq.Consumer
+	Server    *rest.GinServer
 }

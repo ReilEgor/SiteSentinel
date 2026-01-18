@@ -6,6 +6,8 @@ package main
 import (
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/broker/rabbitmq"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/repository/postgres"
+	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/transport/rest"
+	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/transport/rest/handler"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/domain"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/scheduler"
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/usecase"
@@ -35,10 +37,16 @@ var UsecaseSet = wire.NewSet(
 	wire.Bind(new(domain.SiteUsecase), new(*usecase.MonitorInteractor)),
 )
 
+var HTTPSet = wire.NewSet(
+	rest.NewGinServer,
+	handler.NewHandler,
+)
+
 type App struct {
 	Logic     domain.SiteUsecase
 	Scheduler *scheduler.SiteScheduler
 	Consumer  *rabbitmq.Consumer
+	Server    *rest.GinServer
 }
 
 func InitializeApp(
@@ -52,6 +60,7 @@ func InitializeApp(
 		UsecaseSet,
 		BrokerSet,
 		SchedulerSet,
+		HTTPSet,
 		wire.Struct(new(App), "*"),
 	)
 	return nil, nil, nil

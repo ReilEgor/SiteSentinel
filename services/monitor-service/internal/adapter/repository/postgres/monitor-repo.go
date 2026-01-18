@@ -93,3 +93,61 @@ func (r *MonitorRepository) GetSitesToSchedule(ctx context.Context) ([]pkgModels
 
 	return sites, nil
 }
+
+func (r *MonitorRepository) AddSite(ctx context.Context, userID uuid.UUID, url string, interval int) (*pkgModels.Site, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	querySite := `
+        INSERT INTO sites (url, interval_seconds) 
+        VALUES ($1, $2) 
+        ON CONFLICT (url) DO UPDATE SET url = EXCLUDED.url 
+        RETURNING id, url, interval_seconds, is_up, last_check, created_at`
+
+	var created pkgModels.Site
+	err = tx.QueryRowContext(ctx, querySite, url, interval).Scan(
+		&created.ID, &created.URL, &created.Interval, &created.IsUp, &created.LastCheck, &created.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("upsert site error: %w", err)
+	}
+
+	queryLink := `
+        INSERT INTO user_sites (user_id, site_id) 
+        VALUES ($1, $2) 
+        ON CONFLICT DO NOTHING`
+
+	if _, err := tx.ExecContext(ctx, queryLink, userID, created.ID); err != nil {
+		return nil, fmt.Errorf("link user to site error: %w", err)
+	}
+
+	return &created, tx.Commit()
+}
+
+func (r *MonitorRepository) GetUserSites(ctx context.Context, userID uuid.UUID) ([]*pkgModels.Site, error) {
+	query := `
+        SELECT s.id, s.url, s.interval_seconds, s.is_up, s.last_check, s.created_at 
+        FROM sites s
+        JOIN user_sites us ON s.id = us.site_id
+        WHERE us.user_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sites []*pkgModels.Site
+	for rows.Next() {
+		s := &pkgModels.Site{}
+		if err := rows.Scan(&s.ID, &s.URL, &s.Interval, &s.IsUp, &s.LastCheck, &s.CreatedAt); err != nil {
+			return nil, err
+		}
+		s.UserID = userID
+		sites = append(sites, s)
+	}
+	return sites, rows.Err()
+}
