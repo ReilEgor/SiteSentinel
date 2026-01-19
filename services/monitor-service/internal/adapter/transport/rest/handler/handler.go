@@ -36,13 +36,14 @@ func (h *Handler) AddSite(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	if _, err := h.uc.AddSite(ctx, req.UserID, req.URL, req.Interval); err != nil {
+	site, err := h.uc.AddSite(ctx, req.UserID, req.URL, req.Interval)
+	if err != nil {
 		h.logger.Error("failed to add site", slog.Any("error", err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add site"})
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, site)
 }
 
 func (h *Handler) GetUserSites(c *gin.Context) {
