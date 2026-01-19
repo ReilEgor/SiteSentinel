@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"errors"
 	"net/url"
 	"time"
 
@@ -9,8 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	ErrInvalidURL = errors.New("invalid website URL")
+const (
+	MinCheckInterval = 60 // seconds
 )
 
 func NewSite(userID uuid.UUID, rawURL string) (*pkgModels.Site, error) {
