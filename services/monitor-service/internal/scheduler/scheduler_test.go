@@ -2,30 +2,22 @@ package scheduler
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"testing"
 
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/domain"
 	mocks "github.com/ReilEgor/SiteSentinel/monitor-service/internal/mocks/domain"
-	"github.com/ReilEgor/SiteSentinel/pkg/models"
-	"github.com/google/uuid"
+	pkgModels "github.com/ReilEgor/SiteSentinel/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	_ "github.com/stretchr/testify/mock"
 )
 
-func intToUUID(num uint32) uuid.UUID {
-	var b [16]byte
-	binary.BigEndian.PutUint32(b[:4], num)
-	return uuid.Must(uuid.FromBytes(b[:]))
-}
-
 func TestSiteScheduler_Execute(t *testing.T) {
 	ctx := context.Background()
 
-	testSites := []models.Site{
-		{ID: intToUUID(1), URL: "https://test.com"},
+	testSites := []pkgModels.Site{
+		{ID: domain.IntToUUID(1), URL: "https://test.com"},
 	}
 	t.Run("success execution", func(t *testing.T) {
 		mockPub := mocks.NewTaskPublisher(t)
@@ -39,7 +31,7 @@ func TestSiteScheduler_Execute(t *testing.T) {
 	t.Run("no sites to schedule", func(t *testing.T) {
 		mockPub := mocks.NewTaskPublisher(t)
 		mockRepo := mocks.NewMonitorRepository(t)
-		mockRepo.On("GetSitesToSchedule", ctx).Return([]models.Site{}, nil).Once()
+		mockRepo.On("GetSitesToSchedule", ctx).Return([]pkgModels.Site{}, nil).Once()
 
 		s := NewSiteScheduler(mockRepo, mockPub)
 		s.execute(ctx)
