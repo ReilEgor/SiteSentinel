@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -27,13 +28,13 @@ func NewSiteScheduler(repo domain.MonitorRepository, pub domain.TaskPublisher) *
 func (s *SiteScheduler) Run(ctx context.Context) {
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
-	s.logger.Info("scheduler started",
+	s.logger.Debug("scheduler started",
 		slog.String("interval", s.interval.String()))
 
 	for {
 		select {
 		case <-ctx.Done():
-			s.logger.Info("scheduler stopping")
+			s.logger.Debug("scheduler stopping")
 			return
 		case <-ticker.C:
 			s.execute(ctx)
@@ -41,18 +42,20 @@ func (s *SiteScheduler) Run(ctx context.Context) {
 	}
 }
 
-func (s *SiteScheduler) execute(ctx context.Context) {
+func (s *SiteScheduler) execute(ctx context.Context) error {
+	s.logger.Debug("scheduler execution started")
+
 	start := time.Now()
 	sites, err := s.repo.GetSitesToSchedule(ctx)
 	if err != nil {
 		s.logger.Error("failed to get sites from repository",
-			slog.Any("error", err))
-		return
+			slog.Any("error", fmt.Errorf("%w: %v", domain.ErrFetchSitesFailed, err)))
+		return fmt.Errorf("%w: %v", domain.ErrFetchSitesFailed, err)
 	}
 
 	if len(sites) == 0 {
 		s.logger.Debug("no sites found to schedule")
-		return
+		return nil
 	}
 
 	s.logger.Info("found sites to check",
@@ -63,12 +66,13 @@ func (s *SiteScheduler) execute(ctx context.Context) {
 			s.logger.Error("failed to publish task",
 				slog.String("site_url", site.URL),
 				slog.Any("site_id", site.ID),
-				slog.Any("error", err))
+				slog.Any("error", fmt.Errorf("%w: %v", domain.ErrPublishTaskFailed, err)))
 			continue
 		}
 
-		s.logger.Info("task published successfully",
+		s.logger.Debug("task published successfully",
 			slog.String("site_url", site.URL),
 			slog.Duration("took", time.Since(start)))
 	}
+	return nil
 }
