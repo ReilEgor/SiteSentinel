@@ -29,7 +29,7 @@ func TestHandler_AddSite(t *testing.T) {
 			URL      string    `json:"url"`
 			Interval int       `json:"interval"`
 		}{
-			UserID:   domain.IntToUUID(1),
+			UserID:   pkgModels.IntToUUID(1),
 			URL:      "https://google.com",
 			Interval: domain.MinCheckInterval,
 		}
@@ -61,7 +61,7 @@ func TestHandler_AddSite(t *testing.T) {
 	})
 	t.Run("bad req", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"userID":   domain.IntToUUID(1),
+			"userID":   pkgModels.IntToUUID(1),
 			"badurl":   "https://google.com",
 			"interval": domain.MinCheckInterval,
 		}
@@ -80,7 +80,7 @@ func TestHandler_AddSite(t *testing.T) {
 	})
 	t.Run("uc error", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"userID":   domain.IntToUUID(1),
+			"userID":   pkgModels.IntToUUID(1),
 			"url":      "https://google.com",
 			"interval": domain.MinCheckInterval,
 		}
@@ -107,8 +107,8 @@ func TestHandler_GetUserSites(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		ans := &pkgModels.Site{
-			ID:        domain.IntToUUID(1),
-			UserID:    domain.IntToUUID(1),
+			ID:        pkgModels.IntToUUID(1),
+			UserID:    pkgModels.IntToUUID(1),
 			URL:       "https://google.com",
 			Interval:  60,
 			Status:    "up",
@@ -121,13 +121,13 @@ func TestHandler_GetUserSites(t *testing.T) {
 		h := NewHandler(mockUC)
 
 		expectedSites := []*pkgModels.Site{ans}
-		mockUC.On("GetUserSites", ctx, domain.IntToUUID(1)).
+		mockUC.On("GetUserSites", ctx, pkgModels.IntToUUID(1)).
 			Return(expectedSites, nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/getUserSites/:userID", nil)
-		c.Params = []gin.Param{{Key: "userID", Value: domain.IntToUUID(1).String()}}
+		c.Params = []gin.Param{{Key: "userID", Value: pkgModels.IntToUUID(1).String()}}
 		c.Request.Header.Set("Content-Type", "application/json")
 
 		h.GetUserSites(c)
@@ -157,13 +157,13 @@ func TestHandler_GetUserSites(t *testing.T) {
 		h := NewHandler(mockUC)
 
 		ucErr := errors.New("usecase-error")
-		mockUC.On("GetUserSites", ctx, domain.IntToUUID(1)).
+		mockUC.On("GetUserSites", ctx, pkgModels.IntToUUID(1)).
 			Return(nil, ucErr).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/getUserSites/:userID", nil)
-		c.Params = []gin.Param{{Key: "userID", Value: domain.IntToUUID(1).String()}}
+		c.Params = []gin.Param{{Key: "userID", Value: pkgModels.IntToUUID(1).String()}}
 		c.Request.Header.Set("Content-Type", "application/json")
 
 		h.GetUserSites(c)

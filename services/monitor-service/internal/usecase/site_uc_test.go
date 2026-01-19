@@ -15,7 +15,7 @@ import (
 func TestMonitorInteractor_AddSite(t *testing.T) {
 	ctx := context.Background()
 	t.Run("invalid url", func(t *testing.T) {
-		userID := domain.IntToUUID(1)
+		userID := pkgModels.IntToUUID(1)
 		url := "not-a-url"
 		interval := domain.MinCheckInterval
 
@@ -26,7 +26,7 @@ func TestMonitorInteractor_AddSite(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrInvalidURL)
 	})
 	t.Run("out of bound", func(t *testing.T) {
-		userID := domain.IntToUUID(1)
+		userID := pkgModels.IntToUUID(1)
 		url := "https://www.test.com/"
 		interval := 20
 
@@ -37,7 +37,7 @@ func TestMonitorInteractor_AddSite(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrIntervalTooLow)
 	})
 	t.Run("repository error", func(t *testing.T) {
-		userID := domain.IntToUUID(1)
+		userID := pkgModels.IntToUUID(1)
 		url := "https://www.test.com/"
 		interval := 70
 
@@ -55,7 +55,7 @@ func TestMonitorInteractor_AddSite(t *testing.T) {
 		assert.Contains(t, err.Error(), dbErr.Error())
 	})
 	t.Run("no error", func(t *testing.T) {
-		userID := domain.IntToUUID(1)
+		userID := pkgModels.IntToUUID(1)
 		url := "https://www.test.com/"
 		interval := domain.MinCheckInterval
 
@@ -90,7 +90,7 @@ func TestMonitorInteractor_GetUserSites(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrInvalidUserID)
 	})
 	t.Run("repository error", func(t *testing.T) {
-		userID := domain.IntToUUID(1)
+		userID := pkgModels.IntToUUID(1)
 
 		mockRepo := mocks.NewMonitorRepository(t)
 		interactor := NewMonitorInteractor(mockRepo, nil)
@@ -105,7 +105,7 @@ func TestMonitorInteractor_GetUserSites(t *testing.T) {
 		assert.Contains(t, err.Error(), dbErr.Error())
 	})
 	t.Run("no error", func(t *testing.T) {
-		userID := domain.IntToUUID(1)
+		userID := pkgModels.IntToUUID(1)
 		expectedSites := []*pkgModels.Site{
 			{ID: userID, URL: "https://site1.com", Interval: 60},
 		}
@@ -127,7 +127,7 @@ func TestMonitorInteractor_ProcessCheckResult(t *testing.T) {
 
 	t.Run("filed save check result(repository)", func(t *testing.T) {
 		result := pkgModels.CheckResult{
-			SiteID:  domain.IntToUUID(1),
+			SiteID:  pkgModels.IntToUUID(1),
 			IsUp:    true,
 			Latency: 120,
 		}
@@ -145,7 +145,7 @@ func TestMonitorInteractor_ProcessCheckResult(t *testing.T) {
 	})
 	t.Run("filed update site status(repository)", func(t *testing.T) {
 		result := pkgModels.CheckResult{
-			SiteID:  domain.IntToUUID(1),
+			SiteID:  pkgModels.IntToUUID(1),
 			IsUp:    true,
 			Latency: 120,
 		}

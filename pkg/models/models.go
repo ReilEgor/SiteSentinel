@@ -1,13 +1,9 @@
-package domain
+package models
 
 import (
 	"encoding/binary"
 
 	"github.com/google/uuid"
-)
-
-const (
-	MinCheckInterval = 60 // seconds
 )
 
 func IntToUUID(num uint32) uuid.UUID {

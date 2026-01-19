@@ -17,7 +17,7 @@ func TestSiteScheduler_Execute(t *testing.T) {
 	ctx := context.Background()
 
 	testSites := []pkgModels.Site{
-		{ID: domain.IntToUUID(1), URL: "https://test.com"},
+		{ID: pkgModels.IntToUUID(1), URL: "https://test.com"},
 	}
 	t.Run("success execution", func(t *testing.T) {
 		mockPub := mocks.NewTaskPublisher(t)
