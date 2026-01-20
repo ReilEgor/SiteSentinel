@@ -2,8 +2,10 @@ package rest
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/adapter/transport/rest/handler"
+	"github.com/gin-contrib/cors"
 
 	"github.com/ReilEgor/SiteSentinel/monitor-service/internal/usecase"
 	"github.com/gin-gonic/gin"
@@ -16,12 +18,25 @@ type GinServer struct {
 }
 
 func NewGinServer(uc *usecase.MonitorInteractor) *GinServer {
+	router := gin.New()
+
+	router.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"POST", "GET", "OPTIONS", "PUT", "DELETE"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:   []string{"Content-Length"},
+		MaxAge:          12 * time.Hour,
+	}))
+
+	router.Use(gin.Recovery())
+
+	router.Use(gin.Logger())
+
 	s := &GinServer{
-		router: gin.New(),
+		router: router,
 		uc:     uc,
 		logger: slog.With(slog.String("component", "gin_server")),
 	}
-	s.router.Use(gin.Recovery())
 
 	s.mapRoutes()
 	return s
