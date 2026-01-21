@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -150,4 +151,49 @@ func (r *MonitorRepository) GetUserSites(ctx context.Context, userID uuid.UUID) 
 		sites = append(sites, s)
 	}
 	return sites, rows.Err()
+}
+
+func (r *MonitorRepository) DeleteSite(ctx context.Context, userID uuid.UUID, url string) (*pkgModels.Site, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	var site pkgModels.Site
+	querySelect := `
+        SELECT s.id, s.url, s.interval_seconds, s.is_up, s.last_check, s.created_at 
+        FROM sites s
+        JOIN user_sites us ON s.id = us.site_id
+        WHERE us.user_id = $1 AND s.url = $2`
+
+	err = tx.QueryRowContext(ctx, querySelect, userID, url).Scan(
+		&site.ID, &site.URL, &site.Interval, &site.IsUp, &site.LastCheck, &site.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("site not found for this user")
+		}
+		return nil, fmt.Errorf("query site: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx, `DELETE FROM user_sites WHERE user_id = $1 AND site_id = $2`, userID, site.ID)
+	if err != nil {
+		return nil, fmt.Errorf("delete user_site link: %w", err)
+	}
+
+	queryCleanOrphan := `
+        DELETE FROM sites 
+        WHERE id = $1 AND NOT EXISTS (SELECT 1 FROM user_sites WHERE site_id = $1)`
+
+	_, err = tx.ExecContext(ctx, queryCleanOrphan, site.ID)
+	if err != nil {
+		return nil, fmt.Errorf("cleanup orphaned site: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit tx: %w", err)
+	}
+
+	return &site, nil
 }

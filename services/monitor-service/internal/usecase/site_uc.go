@@ -102,3 +102,30 @@ func (i *MonitorInteractor) ProcessCheckResult(ctx context.Context, result pkgMo
 
 	return nil
 }
+func (i *MonitorInteractor) DeleteSite(ctx context.Context, userID uuid.UUID, url string) (*pkgModels.Site, error) {
+	i.logger.Debug("adding new site",
+		slog.String("url", url))
+
+	parsedURL, err := netURL.ParseRequestURI(url)
+	if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return nil, domain.ErrInvalidURL
+	}
+
+	site, err := i.repo.DeleteSite(ctx, userID, url)
+	if err != nil {
+		i.logger.Error("failed to add site",
+			slog.String("user_id", userID.String()),
+			slog.String("url", url),
+			slog.Any("error", err.Error()),
+		)
+		return nil, fmt.Errorf("%w: %v", domain.ErrAddSiteFailed, err)
+	}
+
+	i.logger.Debug("site added successfully",
+		slog.String("user_id", userID.String()),
+		slog.String("site_id", site.ID.String()),
+		slog.String("url", url),
+	)
+
+	return site, nil
+}

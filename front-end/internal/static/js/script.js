@@ -86,7 +86,7 @@ async function handleAddSite() {
 
         monitoredSites.push({
             url: urlValue,
-            status: "up",
+            status: "WAITING",
             latency: "waiting",
             lastCheck: "Just now"
         });
@@ -103,10 +103,37 @@ async function handleAddSite() {
     }
 }
 
-function removeSite(index) {
-    if (confirm("Remove this site from monitoring?")) {
+async function removeSite(index) {
+    const siteToRemove = monitoredSites[index];
+    if (!siteToRemove) return;
+
+    if (!confirm(`Remove ${siteToRemove.url} from monitoring?`)) {
+        return;
+    }
+
+    const reqData = {
+        userID: "550e8400-e29b-41d4-a716-446655440000",
+        url: siteToRemove.url,
+    };
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/deleteSite`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(reqData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
         monitoredSites.splice(index, 1);
+
         renderSites();
+
+    } catch (error) {
+        console.error('Error deleting site:', error);
+        alert("Failed to delete site. It might still be in the list.");
     }
 }
 
