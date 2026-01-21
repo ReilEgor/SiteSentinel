@@ -70,3 +70,27 @@ func (h *Handler) GetUserSites(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"sites": sites})
 }
+
+func (h *Handler) DeleteSite(c *gin.Context) {
+	var req struct {
+		UserID uuid.UUID `json:"userID" binding:"required"`
+		URL    string    `json:"url" binding:"required,url"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Warn("invalid request body", slog.Any("error", err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "details": err.Error()})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	site, err := h.uc.DeleteSite(ctx, req.UserID, req.URL)
+	if err != nil {
+		h.logger.Error("failed to delete site", slog.Any("error", err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add site"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, site)
+}

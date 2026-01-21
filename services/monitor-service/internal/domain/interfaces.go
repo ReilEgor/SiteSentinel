@@ -14,6 +14,7 @@ type MonitorRepository interface {
 	GetSitesToSchedule(ctx context.Context) ([]pkgModels.Site, error)
 	GetUserSites(ctx context.Context, userID uuid.UUID) ([]*pkgModels.Site, error)
 	AddSite(ctx context.Context, userID uuid.UUID, url string, interval int) (*pkgModels.Site, error)
+	DeleteSite(ctx context.Context, userID uuid.UUID, url string) (*pkgModels.Site, error)
 }
 
 //go:generate mockery --name TaskPublisher --output ../mocks/domain --outpkg domain --case=underscore
@@ -24,6 +25,7 @@ type TaskPublisher interface {
 //go:generate mockery --name SiteUsecase --output ../mocks/domain --outpkg domain --case=underscore
 type SiteUsecase interface {
 	AddSite(ctx context.Context, userID uuid.UUID, url string, interval int) (*pkgModels.Site, error)
+	DeleteSite(ctx context.Context, userID uuid.UUID, url string) (*pkgModels.Site, error)
 	GetUserSites(ctx context.Context, userID uuid.UUID) ([]*pkgModels.Site, error)
 	ProcessCheckResult(ctx context.Context, result pkgModels.CheckResult) error
 }

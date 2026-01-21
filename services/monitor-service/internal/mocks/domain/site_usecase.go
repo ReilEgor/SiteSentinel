@@ -47,6 +47,36 @@ func (_m *SiteUsecase) AddSite(ctx context.Context, userID uuid.UUID, url string
 	return r0, r1
 }
 
+// DeleteSite provides a mock function with given fields: ctx, userID, url
+func (_m *SiteUsecase) DeleteSite(ctx context.Context, userID uuid.UUID, url string) (*models.Site, error) {
+	ret := _m.Called(ctx, userID, url)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteSite")
+	}
+
+	var r0 *models.Site
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*models.Site, error)); ok {
+		return rf(ctx, userID, url)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *models.Site); ok {
+		r0 = rf(ctx, userID, url)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.Site)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = rf(ctx, userID, url)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetUserSites provides a mock function with given fields: ctx, userID
 func (_m *SiteUsecase) GetUserSites(ctx context.Context, userID uuid.UUID) ([]*models.Site, error) {
 	ret := _m.Called(ctx, userID)

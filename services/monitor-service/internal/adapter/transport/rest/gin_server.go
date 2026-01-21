@@ -52,6 +52,7 @@ func (s *GinServer) mapRoutes() {
 	{
 		v1.GET("/getUserSites/:userID", h.GetUserSites)
 		v1.POST("/addSite", h.AddSite)
+		v1.DELETE("/deleteSite", h.DeleteSite)
 	}
 }
 
